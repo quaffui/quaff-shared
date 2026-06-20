@@ -1,0 +1,89 @@
+name: Generated Project E2E
+
+on:
+  workflow_call:
+    inputs:
+      package-under-test:
+        required: true
+        type: string
+      source-repository:
+        required: false
+        type: string
+      source-ref:
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      project-to-check:
+        description: Project to check
+        required: true
+        type: choice
+        options:
+          - quaff
+          - create-quaff
+          - published
+      source-ref:
+        description: Branch or SHA to test for source modes
+        required: true
+        default: main
+        type: string
+
+jobs:
+  generated-project-e2e:
+    name: Generated Project E2E (${{ inputs.package-under-test || inputs.project-to-check }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout shared test runner
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          repository: quaffui/quaff-shared
+          ref: main
+
+      - name: Checkout source under test
+        if: ${{ (inputs.package-under-test || inputs.project-to-check) != 'published' }}
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          repository: ${{ inputs.source-repository || format('quaffui/{0}', inputs.project-to-check) }}
+          ref: ${{ inputs.source-ref }}
+          path: source-under-test
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install shared test dependencies
+        run: bun install --production --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browser
+        run: bunx playwright install --with-deps chromium
+
+      - name: Test generated project (${{ inputs.package-under-test || inputs.project-to-check }})
+        env:
+          PROJECT_TO_CHECK: ${{ inputs.package-under-test || inputs.project-to-check }}
+        run: |
+          echo "Project mode: $PROJECT_TO_CHECK"
+          case "$PROJECT_TO_CHECK" in
+            quaff)
+              bun run e2e -- --quaff-source source-under-test
+              ;;
+            create-quaff)
+              bun run e2e -- --create-quaff-source source-under-test
+              ;;
+            published)
+              bun run e2e
+              ;;
+            *)
+              echo "Unknown project to check: $PROJECT_TO_CHECK"
+              exit 1
+              ;;
+          esac

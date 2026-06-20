@@ -1,0 +1,27 @@
+name: Code Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  run-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Prep
+        run: bun install --frozen-lockfile
+
+      - name: Run Type Check
+        run: bun run check
+
+      - name: Run Lint
+        run: bun run lint
