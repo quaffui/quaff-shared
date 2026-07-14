@@ -1,9 +1,12 @@
 import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { chromium, expect, type Page } from "@playwright/test";
 import { delay, run, step, withServer } from "./process";
 
 export async function runGeneratedProjectE2e(projectDir: string, options: { headed: boolean }) {
-  await step("Install generated project dependencies", () => run("bun", ["install"], projectDir));
+  await step("Install generated project dependencies", () =>
+    run("bun", ["install", `--config=${join(import.meta.dir, "../bunfig.toml")}`], projectDir)
+  );
   await step("Type check generated project", () => run("bun", ["run", "check"], projectDir));
 
   if (!existsSync(chromium.executablePath())) {
