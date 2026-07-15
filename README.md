@@ -58,6 +58,17 @@ with:
   source-ref: ${{ github.event.pull_request.head.sha }}
 ```
 
+Paired branches can be tested together with:
+
+```yaml
+with:
+  package-under-test: both
+  quaff-source-repository: quaffui/quaff
+  quaff-source-ref: feat/quaff-change
+  create-quaff-source-repository: quaffui/create-quaff
+  create-quaff-source-ref: feat/create-quaff-change
+```
+
 Post-publish workflows can test the latest npm packages with:
 
 ```yaml

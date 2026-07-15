@@ -12,6 +12,22 @@ on:
       source-ref:
         required: false
         type: string
+      quaff-source-repository:
+        default: quaffui/quaff
+        required: false
+        type: string
+      quaff-source-ref:
+        default: main
+        required: false
+        type: string
+      create-quaff-source-repository:
+        default: quaffui/create-quaff
+        required: false
+        type: string
+      create-quaff-source-ref:
+        default: main
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       project-to-check:
@@ -21,9 +37,20 @@ on:
         options:
           - quaff
           - create-quaff
+          - both
           - published
       source-ref:
-        description: Branch or SHA to test for source modes
+        description: Branch or SHA to test for a single-source mode
+        required: true
+        default: main
+        type: string
+      quaff-source-ref:
+        description: Quaff branch or SHA to test in both mode
+        required: true
+        default: main
+        type: string
+      create-quaff-source-ref:
+        description: create-quaff branch or SHA to test in both mode
         required: true
         default: main
         type: string
@@ -41,13 +68,31 @@ jobs:
           ref: main
 
       - name: Checkout source under test
-        if: ${{ (inputs.package-under-test || inputs.project-to-check) != 'published' }}
+        if: ${{ (inputs.package-under-test || inputs.project-to-check) != 'both' && (inputs.package-under-test || inputs.project-to-check) != 'published' }}
         uses: actions/checkout@v6
         with:
           persist-credentials: false
           repository: ${{ inputs.source-repository || format('quaffui/{0}', inputs.project-to-check) }}
           ref: ${{ inputs.source-ref }}
           path: source-under-test
+
+      - name: Checkout Quaff source
+        if: ${{ (inputs.package-under-test || inputs.project-to-check) == 'both' }}
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          repository: ${{ inputs.quaff-source-repository || 'quaffui/quaff' }}
+          ref: ${{ inputs.quaff-source-ref }}
+          path: quaff-source
+
+      - name: Checkout create-quaff source
+        if: ${{ (inputs.package-under-test || inputs.project-to-check) == 'both' }}
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          repository: ${{ inputs.create-quaff-source-repository || 'quaffui/create-quaff' }}
+          ref: ${{ inputs.create-quaff-source-ref }}
+          path: create-quaff-source
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -78,6 +123,9 @@ jobs:
               ;;
             create-quaff)
               bun run e2e -- --create-quaff-source source-under-test
+              ;;
+            both)
+              bun run e2e -- --quaff-source quaff-source --create-quaff-source create-quaff-source
               ;;
             published)
               bun run e2e
