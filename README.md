@@ -69,9 +69,14 @@ with:
   create-quaff-source-ref: feat/create-quaff-change
 ```
 
-Post-publish workflows can test the latest npm packages with:
+Post-publish workflows can wait for and test the exact npm release with:
 
 ```yaml
 with:
   package-under-test: published
+  published-package: create-quaff # or "@quaffui/quaff"
+  published-version: ${{ inputs.version }}
 ```
+
+The Bun runner polls that version's npm metadata every 30 seconds for up to 10 minutes,
+then installs and tests that exact version. Source/PR runs skip polling.
