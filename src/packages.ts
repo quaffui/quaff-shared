@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { run } from "./process";
+import { delay, run } from "./process";
 
 export async function packQuaff(sourceDir: string, workRoot: string) {
   return await packSource({
@@ -40,10 +40,34 @@ export async function patchQuaffDependency(projectDir: string, quaffPackage: str
   };
 
   packageJson.devDependencies ??= {};
-  packageJson.devDependencies["@quaffui/quaff"] = `file:${quaffPackage}`;
+  packageJson.devDependencies["@quaffui/quaff"] = quaffPackage;
 
   await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
-  console.log(`@quaffui/quaff -> file:${quaffPackage}`);
+  console.log(`@quaffui/quaff -> ${quaffPackage}`);
+}
+
+export async function waitForPublishedPackage(name: string, version: string) {
+  const deadline = Date.now() + 10 * 60_000;
+  const url = `https://registry.npmjs.org/${encodeURIComponent(name)}/${encodeURIComponent(version)}`;
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url, {
+        headers: { "Cache-Control": "no-cache" },
+        signal: AbortSignal.timeout(Math.max(1, Math.min(30_000, deadline - Date.now()))),
+      });
+      const metadata = (await response.json()) as { version?: string };
+
+      if (response.ok && metadata.version === version) return;
+    } catch {
+      // Retry transient network and registry errors.
+    }
+
+    console.log(`Waiting for ${name}@${version} on npm...`);
+    await delay(Math.max(0, Math.min(30_000, deadline - Date.now())));
+  }
+
+  throw new Error(`Timed out after 10 minutes waiting for ${name}@${version} on npm`);
 }
 
 async function packSource(options: {

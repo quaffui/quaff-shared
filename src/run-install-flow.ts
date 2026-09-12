@@ -4,7 +4,13 @@ import { join } from "node:path";
 import { parseArgs } from "./args";
 import { createGeneratedProject } from "./create-project";
 import { runGeneratedProjectE2e } from "./e2e";
-import { installCreateQuaff, packCreateQuaff, packQuaff, patchQuaffDependency } from "./packages";
+import {
+  installCreateQuaff,
+  packCreateQuaff,
+  packQuaff,
+  patchQuaffDependency,
+  waitForPublishedPackage,
+} from "./packages";
 import { step } from "./process";
 
 const options = parseArgs(process.argv.slice(2));
@@ -15,22 +21,35 @@ try {
   let createQuaffPackage: string | undefined;
   let quaffPackage: string | undefined;
 
+  const name = process.env.PUBLISHED_PACKAGE;
+  const version = process.env.PUBLISHED_VERSION;
+
+  if (name && version) {
+    await step(`Wait for ${name}@${version} on npm`, () => waitForPublishedPackage(name, version));
+
+    if (name === "create-quaff") {
+      createQuaffPackage = version;
+    } else {
+      quaffPackage = version;
+    }
+  }
+
   if (options.createQuaffSource) {
     const sourceDir = options.createQuaffSource;
 
-    createQuaffPackage = await step("Pack local create-quaff", () =>
+    createQuaffPackage = `file:${await step("Pack local create-quaff", () =>
       packCreateQuaff(sourceDir, workRoot)
-    );
+    )}`;
   }
 
   if (options.quaffSource) {
     const sourceDir = options.quaffSource;
 
-    quaffPackage = await step("Pack local Quaff", () => packQuaff(sourceDir, workRoot));
+    quaffPackage = `file:${await step("Pack local Quaff", () => packQuaff(sourceDir, workRoot))}`;
   }
 
   const createQuaffBin = await step("Install create-quaff runner", () =>
-    installCreateQuaff(workRoot, createQuaffPackage ? `file:${createQuaffPackage}` : undefined)
+    installCreateQuaff(workRoot, createQuaffPackage)
   );
 
   await step("Create generated project", () =>
@@ -38,7 +57,7 @@ try {
   );
 
   if (quaffPackage) {
-    await step("Use local Quaff package", () => patchQuaffDependency(projectDir, quaffPackage));
+    await step("Use Quaff package", () => patchQuaffDependency(projectDir, quaffPackage));
   }
 
   await runGeneratedProjectE2e(projectDir, { headed: options.headed });

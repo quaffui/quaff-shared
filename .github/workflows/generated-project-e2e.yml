@@ -6,6 +6,14 @@ on:
       package-under-test:
         required: true
         type: string
+      published-package:
+        description: npm package just published (create-quaff or @quaffui/quaff)
+        required: false
+        type: string
+      published-version:
+        description: Exact version to await and test after publishing
+        required: false
+        type: string
       source-repository:
         required: false
         type: string
@@ -115,6 +123,8 @@ jobs:
       - name: Test generated project (${{ inputs.package-under-test || inputs.project-to-check }})
         env:
           PROJECT_TO_CHECK: ${{ inputs.package-under-test || inputs.project-to-check }}
+          PUBLISHED_PACKAGE: ${{ inputs.package-under-test == 'published' && inputs.published-package || '' }}
+          PUBLISHED_VERSION: ${{ inputs.package-under-test == 'published' && inputs.published-version || '' }}
         run: |
           echo "Project mode: $PROJECT_TO_CHECK"
           case "$PROJECT_TO_CHECK" in
