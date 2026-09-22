@@ -28,7 +28,7 @@ export async function installCreateQuaff(workRoot: string, packageSpec = "latest
     join(runnerDir, "package.json"),
     JSON.stringify({ private: true, devDependencies: { "create-quaff": packageSpec } }, null, 2)
   );
-  await run("bun", ["install"], runnerDir);
+  await run("bun", ["install", `--config=${join(import.meta.dir, "../bunfig.toml")}`], runnerDir);
 
   return join(runnerDir, "node_modules/.bin/create-quaff");
 }
