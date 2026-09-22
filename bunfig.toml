@@ -1,3 +1,3 @@
 [install]
 minimumReleaseAge = 259200
-minimumReleaseAgeExcludes = ["@quaffui/quaff", "@quaffui/create-quaff", "@quaffui/material-color-utilities"]
+minimumReleaseAgeExcludes = ["@quaffui/quaff", "create-quaff", "@quaffui/material-color-utilities"]
