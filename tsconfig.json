@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "es2022",
-    "lib": ["es2022"],
+    "lib": ["es2022", "dom"],
     "moduleResolution": "bundler",
     "types": ["bun-types"],
     "exactOptionalPropertyTypes": true,
