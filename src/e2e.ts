@@ -39,16 +39,32 @@ export async function runGeneratedProjectE2e(projectDir: string, options: { head
 
 async function assertGeneratedPage(page: Page, url: string, options: { headed: boolean }) {
   await gotoWhenReady(page, url);
+  const button = page.getByRole("button", { name: "Click me" });
+
   await expect(page.getByRole("heading", { name: /You've made it/ })).toBeVisible();
   await expect(page.getByText("successfully installed Quaff")).toBeVisible();
   await expect(page.locator(".q-field").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Click me" })).toBeVisible();
+  await expect(button).toBeVisible();
   await expect(page.locator(".q-field").first()).toHaveCSS("display", "flex");
-  await expect(page.getByRole("button", { name: "Click me" })).toHaveCSS("border-radius", "20px");
+  await expect.poll(() => button.evaluate(hasFullyRoundedCorners)).toBe(true);
 
   if (options.headed) {
     await delay(3_000);
   }
+}
+
+function hasFullyRoundedCorners(element: Element) {
+  const borderRadius = getComputedStyle(element).borderRadius;
+
+  if (!/^\d+(?:\.\d+)?px$/.test(borderRadius)) {
+    return false;
+  }
+
+  const { width, height } = element.getBoundingClientRect();
+  const minimumRadius = Math.min(width, height) / 2;
+
+  // CSS clamps oversized radii to the element's dimensions.
+  return minimumRadius > 0 && Number.parseFloat(borderRadius) >= minimumRadius;
 }
 
 async function gotoWhenReady(page: Page, url: string) {
