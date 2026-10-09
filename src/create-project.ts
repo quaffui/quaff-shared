@@ -77,7 +77,7 @@ async function isProjectReady(projectDir: string): Promise<boolean> {
 
     return (
       packageJson.includes('"@quaffui/quaff"') &&
-      viteConfig.includes("quaffCss()") &&
+      viteConfig.includes("quaffAssets()") &&
       layout.includes("Quaff.init()") &&
       page.includes("You've made it.")
     );
