@@ -27,6 +27,16 @@ export async function createGeneratedProject(options: {
     await answer("Pick a language", "[Enter]");
     await answer("Package name (package.json)?", "quaff-smoke[Enter]");
     await answer("Add a CSS preprocessor?", "[Enter]");
+    await cli.findByText(
+      /Prune unused CSS and icons\?|Add optional features\?/,
+      { stripAnsi: true },
+      { timeout: 60_000 }
+    );
+
+    if (cli.queryByText("Prune unused CSS and icons?", { exact: false, stripAnsi: true })) {
+      await answer("Prune unused CSS and icons?", "[Enter]");
+    }
+
     await answer("Add optional features?", "[Enter]");
     await answer("Install dependencies now?", "[ArrowUp][Enter]");
 
@@ -77,7 +87,7 @@ async function isProjectReady(projectDir: string): Promise<boolean> {
 
     return (
       packageJson.includes('"@quaffui/quaff"') &&
-      viteConfig.includes("quaffAssets()") &&
+      viteConfig.includes("quaffAssets(") &&
       layout.includes("Quaff.init()") &&
       page.includes("You've made it.")
     );

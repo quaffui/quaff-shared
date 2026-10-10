@@ -47,10 +47,17 @@ async function assertGeneratedPage(page: Page, url: string, options: { headed: b
   await expect(button).toBeVisible();
   await expect(page.locator(".q-field").first()).toHaveCSS("display", "flex");
   await expect.poll(() => button.evaluate(hasFullyRoundedCorners)).toBe(true);
+  await expect.poll(() => page.evaluate(hasLoadedIconFont)).toBe(true);
 
   if (options.headed) {
     await delay(3_000);
   }
+}
+
+function hasLoadedIconFont() {
+  return [...document.fonts].some(
+    (font) => font.family === "Material Symbols Outlined" && font.status === "loaded"
+  );
 }
 
 function hasFullyRoundedCorners(element: Element) {
